@@ -223,6 +223,6 @@ trtexec.exe --onnx=models/armor.onnx --saveEngine=models/armor.engine --fp16
 4. 如果对你有帮助的话帮忙点个star
 
 #### 已知问题及解决方法
-1. 使用MV-CA016-10UC相机，Gain值设置失败，可以降低config.yaml中Gain的数值，或者直接注释掉该行
+1. 使用MV-CA016-10UC相机，Gain值设置失败，可以降低config.yaml中Gain的数值，或者直接注释掉该行。
 
 
