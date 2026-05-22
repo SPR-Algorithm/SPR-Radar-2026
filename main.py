@@ -670,7 +670,7 @@ def ser_send():
             ser_data = build_data_radar_all(send_map, state)
             packet, seq = build_send_packet(ser_data, seq, [0x03, 0x05])
             ser1.write(packet)
-            time.sleep(0.2)
+            time.sleep(1 / 3)  # 2026协议规定0x0305以3Hz发送
             print(send_map, seq)
             # 超过单点预测时间上限，更新上次预测的进度
             if time.time() - update_time > guess_time_limit:
@@ -698,10 +698,8 @@ def ser_send():
                         # print(packet.hex(),chances_flag,state)
                         ser1.write(packet)
                         print("请求成功", chances_flag)
-                        # 更新标志位
+                        # 2026协议要求该值单调递增且每次只增加1
                         chances_flag += 1
-                        if chances_flag >= 3:
-                            chances_flag = 1
 
                         time_s = time.time()
         except Exception as r:
@@ -717,7 +715,7 @@ def ser_receive():
     global double_vulnerability_chance  # 拥有双倍易伤次数
     global opponent_double_vulnerability  # 双倍易伤触发状态
     global target  # 飞镖当前目标
-    progress_cmd_id = [0x02, 0x0C]  # 任意想要接收数据的命令码，这里是雷达标记进度的命令码0x020E
+    progress_cmd_id = [0x02, 0x0C]  # 雷达标记进度
     vulnerability_cmd_id = [0x02, 0x0E]  # 双倍易伤次数和触发状态
     target_cmd_id = [0x01, 0x05]  # 飞镖目标
     buffer = b''  # 初始化缓冲区
@@ -755,23 +753,24 @@ def ser_receive():
                 # 更新裁判系统数据，标记进度、易伤、飞镖目标
                 if progress_result is not None:
                     received_cmd_id1, received_data1, received_seq1 = progress_result
-                    # vulnerability = received_data1[0]
-                    vulnerability = [((received_data1[0] >> i) & 0x01) * 120 for i in range(5)]
+                    mark_progress = int.from_bytes(received_data1[:2], byteorder='little')
+                    vulnerability = [((mark_progress >> i) & 0x01) * 120 for i in range(6)]
                     if state == 'R':
                         guess_value_now['B1'] = vulnerability[0]
                         guess_value_now['B2'] = vulnerability[1]
-                        guess_value_now['B7'] = vulnerability[4]
+                        guess_value_now['B7'] = vulnerability[5]
                     else:
                         guess_value_now['R1'] = vulnerability[0]
                         guess_value_now['R2'] = vulnerability[1]
-                        guess_value_now['R7'] = vulnerability[4]
+                        guess_value_now['R7'] = vulnerability[5]
                 if vulnerability_result is not None:
                     received_cmd_id2, received_data2, received_seq2 = vulnerability_result
                     received_data2 = list(received_data2)[0]
                     double_vulnerability_chance, opponent_double_vulnerability = Radar_decision(received_data2)
                 if target_result is not None:
                     received_cmd_id3, received_data3, received_seq3 = target_result
-                    target = (list(received_data3)[1] & 0b1100000) >> 6  # 0x0105
+                    dart_info = int.from_bytes(received_data3[1:3], byteorder='little')
+                    target = (dart_info >> 6) & 0b111  # 0x0105 bit6-8
                     # print(target)
 
                 # 从缓冲区中移除已解析的数据包

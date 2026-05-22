@@ -3,17 +3,9 @@ import time
 import cv2
 import numpy as np
 
-index_table = {
-    1: "R1",
-    2: "R2",
-    3: "R3",
-    4: "R4",
-    5: "R7",
-    101: "B1",
-    102: "B2",
-    103: "B3",
-    104: "B4",
-    105: "B7"
+mark_display_order = {
+    'R': ["B1", "B2", "B3", "B4", "B6", "B7"],
+    'B': ["R1", "R2", "R3", "R4", "R6", "R7"],
 }
 
 
@@ -54,12 +46,9 @@ def draw_information_ui(bar_list, camp, image):
         end_point = (50 + line_length, i * segment_height + segment_height // 2)
         cv2.line(image, start_point, end_point, color, line_height, lineType=cv2.LINE_AA)
 
-        # 绘制索引
-        if camp == 'R':
-            index = i + 101
-        else:
-            index = i + 1
-        cv2.putText(image, str(index_table.get(index)), (10, start_point[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+        # 绘制索引，2026位序为1/2/3/4/6空中/7哨兵
+        label = mark_display_order.get(camp, [])[i] if i < len(mark_display_order.get(camp, [])) else str(i)
+        cv2.putText(image, label, (10, start_point[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
                     (255, 255, 255), 2, cv2.LINE_AA)
         cv2.putText(image, str(value), (370, start_point[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2,
                     cv2.LINE_AA)

@@ -102,46 +102,21 @@ def build_data_radar(target_robot_id, target_position_x, target_position_y):
     return data
 
 
-# 雷达数据部分构建示例
+def _append_cm_position(data, point):
+    x, y = point
+    data.extend(bytearray(struct.pack('H', int(x))))  # x坐标，单位cm，小端
+    data.extend(bytearray(struct.pack('H', int(y))))  # y坐标，单位cm，小端
+
+
+# 2026雷达坐标同步：对方1/2/3/4/6/7 + 己方1/2/3/4/6/7，共48字节
 def build_data_radar_all(send_map,state):
-    if state == 'R':
-        data = bytearray()
-        data.extend(bytearray(struct.pack('H', int(send_map['B1'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['B1'][1]))))  # y坐标 (小端)
+    data = bytearray()
+    opponent_prefix, own_prefix = ('B', 'R') if state == 'R' else ('R', 'B')
+    robot_order = (1, 2, 3, 4, 6, 7)
 
-        data.extend(bytearray(struct.pack('H', int(send_map['B2'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['B2'][1]))))  # y坐标 (小端)
-
-        data.extend(bytearray(struct.pack('H', int(send_map['B3'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['B3'][1]))))  # y坐标 (小端)
-
-        data.extend(bytearray(struct.pack('H', int(send_map['B4'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['B4'][1]))))  # y坐标 (小端)
-
-        data.extend(bytearray(struct.pack('H', int(send_map['B5'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['B5'][1]))))  # y坐标 (小端)
-
-        data.extend(bytearray(struct.pack('H', int(send_map['B7'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['B7'][1]))))  # y坐标 (小端)
-    else:
-        data = bytearray()
-        data.extend(bytearray(struct.pack('H', int(send_map['R1'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['R1'][1]))))  # y坐标 (小端)
-
-        data.extend(bytearray(struct.pack('H', int(send_map['R2'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['R2'][1]))))  # y坐标 (小端)
-
-        data.extend(bytearray(struct.pack('H', int(send_map['R3'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['R3'][1]))))  # y坐标 (小端)
-
-        data.extend(bytearray(struct.pack('H', int(send_map['R4'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['R4'][1]))))  # y坐标 (小端)
-
-        data.extend(bytearray(struct.pack('H', int(send_map['R5'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['R5'][1]))))  # y坐标 (小端)
-
-        data.extend(bytearray(struct.pack('H', int(send_map['R7'][0]))))  # x坐标 (小端)
-        data.extend(bytearray(struct.pack('H', int(send_map['R7'][1]))))  # y坐标 (小端)
+    for prefix in (opponent_prefix, own_prefix):
+        for robot_id in robot_order:
+            _append_cm_position(data, send_map.get(f'{prefix}{robot_id}', (0, 0)))
 
     return data
 
